@@ -7,7 +7,8 @@ import {
   Package, 
   Filter,
   Search,
-  Truck
+  Truck,
+  ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { firebaseService } from '../services/firebase';
