@@ -7,7 +7,8 @@ import {
   Calendar,
   Filter,
   Search,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { firebaseService } from '../services/firebase';
