@@ -1,223 +1,313 @@
-# Global Supplier Management System
+# Supplier-Menu Integration API
 
-A standalone supplier management platform that integrates with the main restaurant system to provide comprehensive supplier services.
+A serverless API hosted on Vercel that enables seamless integration between the Supplier Portal and Menu Platform.
 
-## 🚀 Features
+## 🚀 Overview
 
-### Core Supplier Features
-- **Product Catalog Management**: Complete CRUD operations for products with images and specifications
-- **Order Management**: Receive and process purchase orders from restaurants
-- **Customer Management**: Track restaurant partnerships and order history
-- **Invoice Generation**: Automated billing and payment tracking
-- **Analytics Dashboard**: Performance metrics and business insights
-- **Restaurant Connections**: Direct integration with restaurant management systems
+This API serves as a bridge between:
+- **Supplier Portal**: https://supplier-bice.vercel.app
+- **Menu Platform**: https://micron-dusky.vercel.app
 
-### Integration Capabilities
-- **Main System Integration**: Seamless connection with restaurant platform
-- **Real-time Synchronization**: Product and order sync across systems
-- **Cross-platform Communication**: Order notifications and status updates
-- **Unified Analytics**: Combined reporting across all connected restaurants
+## 🔐 Authentication
 
-## 🛠 Tech Stack
+All endpoints require an API key in the Authorization header:
 
-### Frontend
-- **React 18** with TypeScript
-- **Tailwind CSS** for modern styling
-- **React Router DOM** for navigation
-- **Lucide React** for icons
-- **Recharts** for analytics visualization
-
-### Backend & Database
-- **Firebase** (Firestore, Auth, Storage) - Dedicated supplier database
-- **ImgBB API** for image hosting (shared with main system)
-
-### Integration
-- **REST API** communication with main restaurant system
-- **Real-time sync** for products and orders
-- **Webhook support** for instant notifications
-
-## 📋 Setup Instructions
-
-### 1. Prerequisites
-- Node.js 18+ and npm
-- Firebase account (separate from main system)
-- ImgBB API access (shared)
-
-### 2. Firebase Setup
-1. Create a new Firebase project for suppliers
-2. Enable Authentication with Email/Password
-3. Create Firestore database
-4. Enable Storage for image uploads
-5. Configure security rules for supplier data
-
-### 3. Environment Configuration
-The Firebase configuration is already set up in `src/config/firebase.ts` with the provided credentials.
-
-### 4. Installation
-```bash
-cd project2
-npm install
+```
+Authorization: Bearer <API_KEY>
 ```
 
-### 5. Development
-```bash
-npm run dev
+## 📡 API Endpoints
+
+### Supplier → Menu Platform
+
+#### 1. Sync Product Catalog
+```http
+POST /api/products/sync
+Content-Type: application/json
+Authorization: Bearer <API_KEY>
+
+{
+  "supplierId": "supplier_123",
+  "products": [
+    {
+      "id": "prod_1",
+      "name": "Premium Olive Oil",
+      "description": "Extra virgin olive oil from Italy",
+      "price": 25.99,
+      "currency": "USD",
+      "category": "Food & Beverages",
+      "stock": 100,
+      "unit": "bottles",
+      "imageUrl": "https://example.com/image.jpg",
+      "isAvailable": true,
+      "minimumOrderQuantity": 1,
+      "leadTimeDays": 2,
+      "brand": "Italian Gold",
+      "sku": "OIL-001"
+    }
+  ]
+}
 ```
 
-The supplier system will run on port 3001 to avoid conflicts with the main system.
+#### 2. Update Product Availability
+```http
+PATCH /api/products/{productId}/availability
+Content-Type: application/json
+Authorization: Bearer <API_KEY>
 
-## 🔧 Integration with Main System
-
-### Connection Flow
-1. **Supplier Registration**: Suppliers create accounts in the standalone system
-2. **Restaurant Discovery**: Search and connect with restaurants from main system
-3. **Product Sync**: Sync supplier products to restaurant supplier management
-4. **Order Flow**: Receive purchase orders from restaurants
-5. **Status Updates**: Notify restaurants of order status changes
-
-### API Endpoints
-The system communicates with the main restaurant system through these endpoints:
-- `GET /api/restaurants/search` - Search restaurants
-- `GET /api/restaurants/:id` - Get restaurant details
-- `POST /api/supplier-connections` - Request connection
-- `POST /api/supplier-products/sync` - Sync products
-- `PUT /api/purchase-orders/:id/status` - Update order status
-
-### Data Synchronization
-- **Products**: Suppliers manage their catalog, sync to restaurants on demand
-- **Orders**: Purchase orders flow from restaurants to suppliers
-- **Status Updates**: Real-time status updates flow back to restaurants
-- **Analytics**: Combined reporting across all connections
-
-## 📊 Database Structure
-
-### Supplier System Collections
-```
-suppliers/              # Supplier business information
-products/              # Product catalog
-purchaseOrders/        # Orders from restaurants
-restaurantConnections/ # Restaurant partnerships
-syncLogs/             # Synchronization history
-supplierUsers/        # Supplier user accounts
-productCategories/    # Product categorization
+{
+  "supplierId": "supplier_123",
+  "stockQuantity": 50,
+  "isAvailable": true
+}
 ```
 
-### Integration Points
-- **Restaurant Discovery**: Query main system for available restaurants
-- **Order Reception**: Receive orders via API from main system
-- **Status Synchronization**: Push order updates back to main system
-- **Product Sync**: Push product catalog to restaurant systems
+### Menu Platform → Supplier
 
-## 🔐 Security Features
+#### 3. Send New Order
+```http
+POST /api/orders/webhook
+Content-Type: application/json
+Authorization: Bearer <API_KEY>
 
-### Authentication & Authorization
-- **Firebase Authentication** for supplier accounts
-- **Role-based Access** (Admin, Staff)
-- **Secure API Communication** with main system
-- **Data Isolation** between suppliers
+{
+  "orderId": "order_456",
+  "restaurantId": "restaurant_789",
+  "supplierId": "supplier_123",
+  "items": [
+    {
+      "productId": "prod_1",
+      "productName": "Premium Olive Oil",
+      "quantity": 5,
+      "unitPrice": 25.99,
+      "unit": "bottles",
+      "sku": "OIL-001"
+    }
+  ],
+  "deliveryInfo": {
+    "address": {
+      "line1": "123 Restaurant St",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10001",
+      "country": "US"
+    },
+    "shippingCost": 15.00
+  },
+  "status": "sent",
+  "orderDate": "2025-01-27T10:00:00Z",
+  "requestedDeliveryDate": "2025-01-30T10:00:00Z",
+  "notes": "Urgent delivery required"
+}
+```
 
-### Data Protection
-- **Input Validation** on all forms
-- **Secure File Uploads** via ImgBB
-- **API Rate Limiting** for external calls
-- **Audit Logging** for all sync operations
+#### 4. Backorder Notification
+```http
+POST /api/orders/backorder
+Content-Type: application/json
+Authorization: Bearer <API_KEY>
+
+{
+  "orderId": "order_456",
+  "restaurantId": "restaurant_789",
+  "supplierId": "supplier_123",
+  "backorderedItems": [
+    {
+      "productId": "prod_1",
+      "productName": "Premium Olive Oil",
+      "requestedQuantity": 10,
+      "availableQuantity": 3,
+      "unit": "bottles",
+      "unitPrice": 25.99
+    }
+  ],
+  "reason": "Insufficient stock",
+  "estimatedRestockDate": "2025-02-05T00:00:00Z"
+}
+```
+
+### Optional Endpoints
+
+#### 5. Get Product Details
+```http
+GET /api/products/{productId}?supplierId=supplier_123
+Authorization: Bearer <API_KEY>
+```
+
+#### 6. Get Order Details
+```http
+GET /api/orders/{orderId}?supplierId=supplier_123
+Authorization: Bearer <API_KEY>
+```
+
+#### 7. Health Check
+```http
+GET /api/health
+```
+
+## 📊 Response Format
+
+All endpoints return structured JSON responses:
+
+```json
+{
+  "status": 200,
+  "message": "Success",
+  "data": { ... },
+  "timestamp": "2025-01-27T10:00:00Z"
+}
+```
+
+### Error Responses
+
+```json
+{
+  "status": 401,
+  "message": "Invalid API key",
+  "data": null,
+  "timestamp": "2025-01-27T10:00:00Z"
+}
+```
+
+## 🔧 Environment Variables
+
+Set these environment variables in your Vercel project:
+
+```env
+API_KEY=your_secure_api_key_here
+SUPPLIER_PORTAL_URL=https://supplier-bice.vercel.app
+MENU_PLATFORM_URL=https://micron-dusky.vercel.app
+SUPPLIER_PORTAL_API_KEY=supplier_portal_api_key
+MENU_PLATFORM_API_KEY=menu_platform_api_key
+```
 
 ## 🚀 Deployment
 
-### Vercel Deployment
-1. Connect repository to Vercel
-2. Set build command: `npm run build`
-3. Set output directory: `dist`
-4. Configure environment variables if needed
-5. Deploy with custom domain (e.g., suppliers.yourdomain.com)
+### Deploy to Vercel
 
-### Post-Deployment
-1. Configure CORS for main system integration
-2. Set up webhook endpoints for real-time updates
-3. Test integration with main restaurant system
-4. Configure monitoring and alerts
+1. **Connect Repository**
+   ```bash
+   vercel --prod
+   ```
 
-## 🔄 System Integration
+2. **Set Environment Variables**
+   - Go to Vercel Dashboard → Project Settings → Environment Variables
+   - Add all required environment variables
 
-### Main System → Supplier System
-- Restaurant creates purchase order
-- Order data sent to supplier system via API
-- Supplier receives notification and can process order
-- Status updates flow back to restaurant system
+3. **Configure Custom Domain** (Optional)
+   - Add custom domain like `api.yourdomain.com`
+   - Update both systems to use the new API URL
 
-### Supplier System → Main System
-- Supplier updates product catalog
-- Products can be synced to restaurant systems
-- Order status updates sent to restaurants
-- Analytics data shared for reporting
-
-### Shared Resources
-- **ImgBB API**: Shared image hosting service
-- **Common Types**: Shared data structures for integration
-- **API Standards**: Consistent API design across systems
-
-## 📱 User Experience
-
-### Supplier Dashboard
-- **Overview**: Key metrics and recent activity
-- **Product Management**: Full catalog management with images
-- **Order Processing**: Streamlined order fulfillment workflow
-- **Customer Insights**: Restaurant partnership analytics
-- **Performance Tracking**: Delivery and satisfaction metrics
-
-### Restaurant Integration
-- **Seamless Discovery**: Restaurants can find and connect with suppliers
-- **Product Browsing**: Access to supplier catalogs within restaurant system
-- **Order Placement**: Direct purchase order creation
-- **Status Tracking**: Real-time order status updates
-
-## 🛡 Business Logic
-
-### Order Processing Workflow
-1. **Order Reception**: Receive from restaurant system
-2. **Order Confirmation**: Supplier confirms availability and pricing
-3. **Preparation**: Supplier prepares order for shipment
-4. **Shipping**: Order shipped with tracking information
-5. **Delivery**: Confirmation of delivery to restaurant
-6.  **Invoicing**: Automated invoice generation
-7. **Payment**: Payment tracking and reconciliation
+## 🔄 Data Flow
 
 ### Product Synchronization
-- **Catalog Management**: Suppliers maintain master catalog
-- **Selective Sync**: Choose which products to share with each restaurant
-- **Real-time Updates**: Availability and pricing updates
-- **Bulk Operations**: Mass updates across multiple restaurants
+1. Supplier updates product catalog in Supplier Portal
+2. Supplier Portal calls `POST /api/products/sync` to push updates
+3. Integration API forwards data to Menu Platform
+4. Menu Platform updates its supplier product listings
 
-## 📈 Analytics & Reporting
+### Stock Updates
+1. Supplier updates stock levels in Supplier Portal
+2. Supplier Portal calls `PATCH /api/products/:id/availability`
+3. Integration API forwards update to Menu Platform
+4. Menu Platform reflects new availability
 
-### Supplier Analytics
-- **Revenue Tracking**: Daily, weekly, monthly trends
-- **Order Analytics**: Volume, value, and frequency
-- **Customer Insights**: Restaurant performance and preferences
-- **Product Performance**: Best-selling items and categories
-- **Delivery Metrics**: On-time delivery and customer satisfaction
+### Order Processing
+1. Restaurant creates order in Menu Platform
+2. Menu Platform calls `POST /api/orders/webhook`
+3. Integration API forwards order to Supplier Portal
+4. Supplier receives order notification
 
-### Integration Analytics
-- **Sync Performance**: Success rates and error tracking
-- **Connection Health**: Active vs. inactive partnerships
-- **Cross-system Metrics**: Combined reporting with main system
+### Backorder Handling
+1. Menu Platform detects insufficient stock
+2. Menu Platform calls `POST /api/orders/backorder`
+3. Integration API notifies Supplier Portal
+4. Supplier can update stock and notify when available
 
-## 🤝 Support & Maintenance
+## 🛡️ Security Features
 
-### Monitoring
-- **System Health**: Automated monitoring of all services
-- **Integration Status**: Real-time connection monitoring with main system
-- **Performance Metrics**: Response times and error rates
-- **User Activity**: Login patterns and feature usage
+- **API Key Authentication**: All endpoints protected
+- **CORS Configuration**: Proper cross-origin handling
+- **Input Validation**: Comprehensive request validation
+- **Error Handling**: Graceful error responses
+- **Rate Limiting**: Built-in Vercel protection
 
-### Backup & Recovery
-- **Automated Backups**: Daily Firebase backups
-- **Data Recovery**: Point-in-time recovery capabilities
-- **Integration Resilience**: Graceful handling of main system downtime
-- **Sync Recovery**: Automatic retry mechanisms for failed syncs
+## 📈 Monitoring
+
+### Health Check
+Use `GET /api/health` to monitor:
+- API service status
+- Environment configuration
+- External system connectivity
+- Available endpoints
+
+### Error Logging
+All errors are logged with:
+- Timestamp
+- Request details
+- Error messages
+- Stack traces (in development)
+
+## 🔗 Integration Examples
+
+### Supplier Portal Integration
+```javascript
+// Sync products to Menu Platform
+const response = await fetch('https://your-api.vercel.app/api/products/sync', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${API_KEY}`
+  },
+  body: JSON.stringify({
+    supplierId: 'supplier_123',
+    products: supplierProducts
+  })
+});
+```
+
+### Menu Platform Integration
+```javascript
+// Send order to supplier
+const response = await fetch('https://your-api.vercel.app/api/orders/webhook', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${API_KEY}`
+  },
+  body: JSON.stringify({
+    orderId: 'order_456',
+    restaurantId: 'restaurant_789',
+    supplierId: 'supplier_123',
+    items: orderItems,
+    deliveryInfo: deliveryDetails
+  })
+});
+```
+
+## 🚨 Error Codes
+
+| Code | Description |
+|------|-------------|
+| 200  | Success |
+| 400  | Bad Request - Invalid input |
+| 401  | Unauthorized - Invalid API key |
+| 404  | Not Found - Resource doesn't exist |
+| 405  | Method Not Allowed |
+| 500  | Internal Server Error |
+| 502  | Bad Gateway - External system error |
+| 503  | Service Unavailable |
+
+## 📞 Support
+
+For integration support:
+1. Check the health endpoint: `GET /api/health`
+2. Verify environment variables are set correctly
+3. Ensure both systems are accessible
+4. Check API key validity
 
 ---
 
-**Built for Professional Suppliers**
+**Built for Seamless Integration**
 
-*Empowering suppliers with modern technology for efficient restaurant partnerships and streamlined order management.*
+*Connecting suppliers and restaurants through modern API architecture.*
