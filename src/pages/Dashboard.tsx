@@ -11,7 +11,8 @@ import {
   AlertCircle,
   CheckCircle,
   Eye,
-  Calendar
+  Calendar,
+  BarChart3
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../hooks/useAuth';
